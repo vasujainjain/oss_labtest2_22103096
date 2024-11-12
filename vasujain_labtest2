@@ -1,0 +1,80 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import load_diabetes
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+diabetes = load_diabetes()
+X = diabetes.data
+y = diabetes.target
+
+print(f"Number of features in the dataset: {X.shape[1]}")
+
+
+pandaData = pd.DataFrame(X, columns=diabetes.feature_names)
+correlation_matrix = pandaData.corr()
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+plt.title('Correlation Heatmap of Features')
+plt.show()
+
+
+print("Checking for missing values...")
+print(np.any(np.isnan(X)))  # In case the data contains any missing values (it shouldn't)
+
+
+imp = SimpleImputer(strategy='mean')
+X_imputed = imp.fit_transform(X)
+
+
+
+def evaluate_classifier(X_train, X_test, y_train, y_test, classifier):
+    y_pred = classifier.fit(X_train, y_train).predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average='weighted')
+    recall = recall_score(y_test, y_pred, average='weighted')
+    f1 = f1_score(y_test, y_pred, average='weighted')
+    return accuracy, precision, recall, f1
+
+
+X_train_60, X_test_60, y_train_60, y_test_60 = train_test_split(X_imputed, y, test_size=0.4, random_state=42)
+knn = KNeighborsClassifier(n_neighbors=5)
+acc_knn_60, prec_knn_60, rec_knn_60, f1_knn_60 = evaluate_classifier(X_train_60, X_test_60, y_train_60, y_test_60, knn)
+
+
+nb= GaussianNB()
+acc_nb_60, prec_nb_60, rec_nb_60, f1_nb_60 = evaluate_classifier(X_train_60, X_test_60, y_train_60, y_test_60, nb)
+
+
+X_train_80, X_test_80, y_train_80, y_test_80 = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
+
+
+acc_knn_80, prec_knn_80, rec_knn_80, f1_knn_80 = evaluate_classifier(X_train_80, X_test_80, y_train_80, y_test_80, knn)
+
+
+acc_nb_80, prec_nb_80, rec_nb_80, f1_nb_80 = evaluate_classifier(X_train_80, X_test_80, y_train_80, y_test_80, nb)
+
+
+plt.figure(figsize=(10, 6))
+
+
+for i, feature in enumerate(diabetes.feature_names):
+    plt.subplot(3, 4, i+1)
+    plt.scatter(X[:, i], y, alpha=0.5)
+    plt.title(f"{feature} vs Blood Sugar")
+    plt.xlabel(feature)
+    plt.ylabel("Blood Sugar (Target)")
+    
+plt.tight_layout()
+plt.show()
+
+
+    
+    
+    
